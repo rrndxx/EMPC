@@ -1,14 +1,17 @@
 <?php
 session_start();
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user']) || $_SESSION['user'] != 'admin') {
+
+// Check if the user is logged in as an admin
+if (!isset($_SESSION['admin'])) {
     header("Location: login.php");
     exit();
 }
+
+$admin_username = $_SESSION['admin'];
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,149 +20,46 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] != 'admin') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #f1f4f7;
         }
-
         .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            height: 100%;
-            background-color: #28a745;
-            padding-top: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar h3 {
-            color: white;
-            text-align: center;
-        }
-
-        .sidebar a {
-            padding: 10px 15px;
-            text-decoration: none;
-            font-size: 18px;
-            color: white;
-            display: flex;
-            align-items: center;
-            transition: background-color 0.3s;
-        }
-
-        .sidebar a i {
-            margin-right: 10px;
-        }
-
-        .sidebar a:hover {
-            background-color: #218838;
-        }
-
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
-            transition: margin-left 0.3s;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #6c757d;
-        }
-
-        .card-custom {
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-header {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .btn-custom {
             background-color: #007bff;
-            color: white;
+            height: 100vh;
+            padding-top: 20px;
         }
-
-        .btn-custom:hover {
+        .sidebar a {
+            color: white;
+            padding: 10px 15px;
+            display: block;
+            margin: 5px 0;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .sidebar a:hover {
             background-color: #0056b3;
         }
-
-        /* Media Queries */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                padding-top: 10px;
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding: 10px;
-            }
-
-            .sidebar a {
-                font-size: 16px;
-                padding: 10px;
-            }
-
-            .sidebar h3 {
-                font-size: 20px;
-            }
-
-            .card-custom {
-                margin-bottom: 20px;
-            }
+        .content {
+            padding: 20px;
         }
     </style>
 </head>
-
 <body>
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h3 class="text-center">Admin Dashboard</h3>
-        <a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="#"><i class="fas fa-users"></i> Members</a>
-        <a href="#"><i class="fas fa-hand-holding-usd"></i> Loans</a>
-        <a href="#"><i class="fas fa-chart-line"></i> Reports</a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <h3>Admin Overview</h3>
-
-        <div class="row mt-5">
-            <div class="col-12 mb-4">
-                <div class="card card-custom">
-                    <div class="card-header">Member Management</div>
-                    <div class="card-body">
-                        <p><strong>Total Members:</strong> 150</p>
-                        <button class="btn btn-custom w-100">View Members</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 mb-4">
-                <div class="card card-custom">
-                    <div class="card-header">Loan Management</div>
-                    <div class="card-body">
-                        <p><strong>Total Loans:</strong> 50</p>
-                        <button class="btn btn-custom w-100">View Loans</button>
-                    </div>
-                </div>
-            </div>
+    <div class="d-flex">
+        <div class="sidebar">
+            <h4 class="text-center text-white">Admin Dashboard</h4>
+            <a href="#">Home</a>
+            <a href="#">Manage Users</a>
+            <a href="#">View Transactions</a>
+            <a href="#">Settings</a>
+            <a href="logout.php" class="btn btn-danger">Logout</a>
         </div>
-
-        <footer>
-            &copy; 2024 EMPC Cooperative
-        </footer>
+        <div class="content">
+            <h2>Welcome, <?php echo htmlspecialchars($admin_username); ?>!</h2>
+            <p>This is your admin dashboard where you can manage the system.</p>
+            <!-- Add more admin-specific content here -->
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
