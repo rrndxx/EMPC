@@ -1,12 +1,10 @@
 <?php
 session_start();
+//include 'db_connection.php'; // Include database connection
 
-// Include database connection
-// include 'db_connection.php';
-
-// Maximum login attempts before lockout
+// Maximum login attempts and lockout duration
 $max_attempts = 5;
-$lockout_time = 15 * 60; // 15 minutes
+$lockout_time = 10 * 60;
 
 // Track login attempts by username
 if (!isset($_SESSION['failed_attempts'])) {
@@ -20,9 +18,12 @@ if (empty($_SESSION['csrf_token'])) {
 
 // Handle form submission for login
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    header('Content-Type: application/json'); // For AJAX response
+
     // Validate CSRF token
     if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-        die('Invalid CSRF token');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+        exit();
     }
 
     $username = trim($_POST['username']);
@@ -35,222 +36,115 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $user_attempts = $_SESSION['failed_attempts'][$username];
 
-    // Lockout Check
+    // Lockout check
     if ($user_attempts['count'] >= $max_attempts && time() - $user_attempts['lockout_time'] < $lockout_time) {
-        $error = "Too many failed attempts. Please try again after " . ceil(($lockout_time - (time() - $user_attempts['lockout_time'])) / 60) . " minutes.";
+        $remaining_time = ceil(($lockout_time - (time() - $user_attempts['lockout_time'])) / 60);
+        echo json_encode(['status' => 'error', 'message' => "Too many failed attempts. Please try again after $remaining_time minutes."]);
+        exit();
     } else {
-        // Use prepared statements for secure database queries
-        if ($stmt = $connection->prepare("SELECT * FROM users WHERE username = ?")) {
-            $stmt->bind_param('s', $username);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $user = $result->fetch_assoc();
+        // Check username and password
+        $stmt = $connection->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->bind_param('s', $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
 
-            // Verify password
-            if ($user && password_verify($password, $user['password'])) {
-                session_regenerate_id(); // Secure session ID
-                $_SESSION['user'] = $username;
+        // Verify password and reset attempts on success
+        if ($user && password_verify($password, $user['password'])) {
+            session_regenerate_id(); // Secure session ID
+            $_SESSION['user'] = $username;
 
-                // Reset failed attempts after successful login
-                $_SESSION['failed_attempts'][$username] = ['count' => 0, 'lockout_time' => 0];
+            // Reset failed attempts after successful login
+            $_SESSION['failed_attempts'][$username] = ['count' => 0, 'lockout_time' => 0];
 
-                echo json_encode(['status' => 'success', 'redirect' => 'member_dashboard.php']);
-                exit();
-            } else {
-                // Track failed attempts
-                $_SESSION['failed_attempts'][$username]['count']++;
-                $_SESSION['failed_attempts'][$username]['lockout_time'] = time();
-                $error = "Invalid username or password!";
-            }
-
-            $stmt->close();
+            echo json_encode(['status' => 'success', 'redirect' => 'member_dashboard.php']);
+            exit();
+        } else {
+            // Track failed attempts on failure
+            $_SESSION['failed_attempts'][$username]['count']++;
+            $_SESSION['failed_attempts'][$username]['lockout_time'] = time();
+            echo json_encode(['status' => 'error', 'message' => 'Invalid username or password!']);
+            exit();
         }
     }
-    // Return error as JSON for AJAX handling
-    echo json_encode(['status' => 'error', 'message' => $error]);
-    exit();
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            background-color: #f1f4f7;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
-        }
-
-        .login-container {
-            max-width: 400px;
-            padding: 2rem;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
-            border: 2px solid white;
-            position: relative;
-        }
-
-        h2 {
-            text-align: center;
-            color: #28a745;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background-color: #28a745;
-            border: none;
-            font-weight: 600;
-        }
-
-        .btn-primary:hover {
-            background-color: #218838;
-        }
-
-        .forgot-password,
-        .signup-container {
-            text-align: center;
-        }
-
-        .admin-link {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-        }
-
-        .admin-link a {
-            color: #6c757d;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .admin-link a:hover {
-            color: #28a745;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 55%;
-            cursor: pointer;
-        }
-
-        .spinner-border {
-            display: none;
-            width: 1.5rem;
-            height: 1.5rem;
-            vertical-align: middle;
-        }
-
-        /* Responsive design */
-        @media (max-width: 600px) {
-            .login-container {
-                width: 100%;
-                margin: 10px;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
 </head>
+<body class="d-flex align-items-center justify-content-center bg-light vh-100">
 
-<body>
-    <nav>
-        <div class="admin-link">
-            <a href="admin_dashboard.php">Admin Login</a>
-        </div>
+    <nav class="position-absolute top-0 end-0 p-3">
+        <a href="admin_dashboard.php" class="btn text-white fw-bold" style="background-color: #28a745;">Admin</a>
     </nav>
 
-    <div class="login-container">
-        <h2 class="mb-5">Member Login</h2>
+    <div class="container">
+        <div class="card shadow-sm border-0 mx-auto" style="max-width: 400px;">
+            <div class="card-body p-4">
+                <h2 class="text-center fw-bold mb-4" style="color: #28a745;">Member Login</h2>
 
-        <div id="error-message" class="alert alert-danger d-none"></div>
+                <div id="error-message" class="alert alert-danger d-none"></div>
 
-        <form method="POST" id="login-form">
-            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                <form id="login-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
-            <div class="form-floating mb-3 position-relative">
-                <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
-                <label for="username">Username</label>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                        <label for="username">Username</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                        <label for="password">Password</label>
+                    </div>
+
+                    <button type="submit" class="btn w-100 mb-3" id="login-btn" style="background-color: #28a745; color: white; font-weight: 600;">
+                        Login
+                    </button>
+
+                    <div class="text-end mb-3">
+                        <a href="#" class="text-decoration-none">Forgot Password?</a>
+                    </div>
+
+                    <hr>
+
+                    <div class="text-center">
+                        <p class="text-muted">Don't have an account yet? <a href="register.php" class="text-decoration-none">Signup</a></p>
+                    </div>
+                </form>
             </div>
-
-            <div class="form-floating mb-3 position-relative">
-                <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-                <label for="password">Password</label>
-                <i class="fas fa-eye password-toggle" onclick="togglePassword()"></i>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100 mb-3" id="login-btn">
-                Login
-                <span class="spinner-border" role="status" aria-hidden="true" id="loading-spinner"></span>
-            </button>
-
-            <div class="forgot-password">
-                <a href="#" class="text-muted">Forgot Password?</a>
-            </div>
-
-            <div class="signup-container">
-                <p class="text-muted">Don't have an account yet? <a href="register.php">Signup</a>.</p>
-            </div>
-        </form>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        function togglePassword() {
-            const passwordField = document.getElementById('password');
-            const toggleIcon = document.querySelector('.password-toggle');
-            if (passwordField.type === 'password') {
-                passwordField.type = 'text';
-                toggleIcon.classList.replace('fa-eye', 'fa-eye-slash');
-            } else {
-                passwordField.type = 'password';
-                toggleIcon.classList.replace('fa-eye-slash', 'fa-eye');
-            }
-        }
+        document.getElementById("login-form").addEventListener("submit", function(event) {
+            event.preventDefault();
 
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
             const formData = new FormData(this);
-            document.getElementById('login-btn').disabled = true;
-            document.getElementById('loading-spinner').style.display = 'inline-block';
 
-            fetch('', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('login-btn').disabled = false;
-                    document.getElementById('loading-spinner').style.display = 'none';
-
-                    if (data.status === 'error') {
-                        const errorMessage = document.getElementById('error-message');
-                        errorMessage.innerHTML = data.message;
-                        errorMessage.classList.remove('d-none');
-                    } else if (data.status === 'success') {
-                        window.location.href = data.redirect;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('login-btn').disabled = false;
-                    document.getElementById('loading-spinner').style.display = 'none';
-                });
+            fetch("", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    window.location.href = data.redirect;
+                } else {
+                    const errorMessage = document.getElementById("error-message");
+                    errorMessage.textContent = data.message;
+                    errorMessage.classList.remove("d-none");
+                }
+            })
+            .catch(error => console.error("Error:", error));
         });
     </script>
 </body>
-
 </html>
