@@ -1,13 +1,13 @@
 <?php
 session_start();
-include 'db_connection.php'; // Ensure this file establishes a connection to your database
+include 'connection.php'; // database connection
 
 // Handle registration form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
-    $email = trim($_POST['email']); // Capture email
+    $email = trim($_POST['email']);
     $errors = [];
     $success = "";
 
@@ -40,19 +40,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // If no errors, proceed with account creation
     if (empty($errors)) {
-        // Hash the password for security
         $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
         // Check for existing user
-        $query = "SELECT * FROM users WHERE username = '$username' OR email = '$email'";
-        $result = mysqli_query($connection, $query);
+        $query = "SELECT * FROM users WHERE Username = :username OR Email = :email";
+        $stmt = $con->prepare($query);
+        $stmt->execute(['username' => $username, 'email' => $email]);
 
-        if (mysqli_num_rows($result) > 0) {
+        if ($stmt->rowCount() > 0) {
             $errors[] = "Username or email already exists. Please choose another.";
         } else {
             // Insert user into database
-            $insert_query = "INSERT INTO users (username, password, email) VALUES ('$username', '$hashed_password', '$email')";
-            if (mysqli_query($connection, $insert_query)) {
+            $insert_query = "INSERT INTO users (Username, Password, Email) VALUES (:username, :password, :email)";
+            $insert_stmt = $con->prepare($insert_query);
+            if ($insert_stmt->execute(['username' => $username, 'password' => $hashed_password, 'email' => $email])) {
                 $success = "Account created successfully! You can now log in.";
             } else {
                 $errors[] = "Error creating account. Please try again.";
@@ -69,65 +70,50 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
-            background-color: #f1f4f7;
-            height: 100vh;
-            margin: 0;
-            padding: 0;
+        body { 
+            background-color: #f1f4f7; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
         }
-
-        .signup-container {
-            max-width: 400px;
-            margin: auto;
-            padding: 2rem;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
-            margin-top: 100px;
+        .container {
+            max-width: 400px; 
+            background: rgba(255, 255, 255, 0.9); 
+            border-radius: 10px; 
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1); 
+            padding: 2rem; 
         }
-
-        h2 {
-            text-align: center;
-            color: #28a745;
-            font-weight: 600;
+        h2 { 
+            text-align: center; 
+            color: #28a745; 
         }
-
-        .btn-primary {
-            background-color: #28a745;
-            border: none;
-            font-weight: 600;
+        .btn-primary { 
+            background-color: #28a745; 
+            border: none; 
         }
-
-        .btn-primary:hover {
-            background-color: #218838;
+        .btn-primary:hover { 
+            background-color: #218838; 
         }
-
-        .text-muted {
-            color: #6c757d;
-            text-decoration: none;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
         }
     </style>
 </head>
 <body>
+    <nav class="top-0 p-3">
 
-    <div class="signup-container">
-        <h2 class="mb-4">Sign Up</h2>
+    </nav>
+
+    <div class="container">
+        <h2 class="mb-4">Member Sign Up</h2>
         <?php if (!empty($errors)): ?>
-            <div class="alert alert-danger">
-                <?php foreach ($errors as $error): ?>
-                    <p><?php echo $error; ?></p>
-                <?php endforeach; ?>
-            </div>
+            <div class="alert alert-danger"><?php foreach ($errors as $error): ?><p><?php echo htmlspecialchars($error); ?></p><?php endforeach; ?></div>
         <?php endif; ?>
         <?php if (!empty($success)): ?>
-            <div class="alert alert-success"><?php echo $success; ?></div>
+            <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
         <?php endif; ?>
         <form method="POST" action="">
             <div class="form-floating mb-3">
@@ -147,9 +133,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <label for="confirm_password">Confirm Password</label>
             </div>
             <button type="submit" class="btn btn-primary w-100 mb-2">Sign Up</button>
-
+            <hr>
             <div class="footer">
-                <p class="text-muted">Already have an account? <a href="login.php">Login</a>.</p>
+                <p class="text-muted">Already have an account? <a href="login.php" class="text-decoration-none">Login</a></p>
             </div>
         </form>
     </div>
