@@ -24,6 +24,12 @@ $transactions = [
     ['date' => '2024-10-10', 'description' => 'Loan Payment', 'amount' => -200],
 ];
 
+// Example user details, ideally fetched from a database
+$userDetails = [
+    'email' => 'user@example.com', // Replace with actual email from DB
+    'phone' => '(123) 456-7890'    // Replace with actual phone from DB
+];
+
 // Additional data for analytics
 $totalLoanAmount = array_sum(array_column($loans, 'amount'));
 $totalTransactions = array_sum(array_column($transactions, 'amount'));
@@ -100,8 +106,6 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
             z-index: 10;
         }
 
-        .table {}
-
         .table tbody tr:hover {
             background-color: #f1f1f1;
         }
@@ -177,8 +181,10 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
                     <div class="card-body">
                         <p><i class="fas fa-user icon"></i><strong>Username:</strong>
                             <?php echo htmlspecialchars($username); ?></p>
-                        <p><i class="fas fa-envelope icon"></i><strong>Email:</strong> user@example.com</p>
-                        <p><i class="fas fa-phone icon"></i><strong>Phone:</strong> (123) 456-7890</p>
+                        <p><i class="fas fa-envelope icon"></i><strong>Email:</strong>
+                            <?php echo htmlspecialchars($userDetails['email']); ?></p>
+                        <p><i class="fas fa-phone icon"></i><strong>Phone:</strong>
+                            <?php echo htmlspecialchars($userDetails['phone']); ?></p>
                         <a href="member_profile.php" class="btn btn-primary">Edit Profile</a>
                     </div>
                 </div>
@@ -217,7 +223,7 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
                             foreach ($financials as $title => $amount): ?>
                                 <div class="col-md-6 mb-3">
                                     <div class="border rounded p-3 bg-light">
-                                        <h5><?php echo $title; ?></h5>
+                                        <h5><?php echo htmlspecialchars($title); ?></h5>
                                         <p class="h2 mb-0">$<?php echo number_format($amount, 2); ?></p>
                                     </div>
                                 </div>
@@ -247,8 +253,8 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
                     <?php foreach ($loans as $loan): ?>
                         <tr>
                             <td>$<?php echo number_format($loan['amount'], 2); ?></td>
-                            <td><?php echo $loan['due_date']; ?></td>
-                            <td><?php echo $loan['status']; ?></td>
+                            <td><?php echo htmlspecialchars($loan['due_date']); ?></td>
+                            <td><?php echo htmlspecialchars($loan['status']); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -275,8 +281,8 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
                 <tbody>
                     <?php foreach ($transactions as $transaction): ?>
                         <tr>
-                            <td><?php echo $transaction['date']; ?></td>
-                            <td><?php echo $transaction['description']; ?></td>
+                            <td><?php echo htmlspecialchars($transaction['date']); ?></td>
+                            <td><?php echo htmlspecialchars($transaction['description']); ?></td>
                             <td><?php echo ($transaction['amount'] < 0 ? '-' : '') . '$' . number_format(abs($transaction['amount']), 2); ?>
                             </td>
                         </tr>
