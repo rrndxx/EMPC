@@ -59,6 +59,10 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
             font-weight: bold;
         }
 
+        .nav-item {
+            margin-left: 10px;
+        }
+
         .card {
             transition: box-shadow 0.3s;
         }
@@ -86,6 +90,7 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
             max-height: 300px;
             overflow-y: auto;
             overflow-x: auto;
+            box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
         }
 
         .table thead th {
@@ -94,6 +99,8 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
             background-color: #f8f9fa;
             z-index: 10;
         }
+
+        .table {}
 
         .table tbody tr:hover {
             background-color: #f1f1f1;
@@ -127,12 +134,12 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link <?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?>"
+                        <a class="nav-link <?php echo ($current_page == 'member_dashboard.php') ? 'active' : ''; ?>"
                             href="dashboard.php">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo ($current_page == 'profile.php') ? 'active' : ''; ?>"
-                            href="profile.php">Profile</a>
+                        <a class="nav-link <?php echo ($current_page == 'member_profile.php') ? 'active' : ''; ?>"
+                            href="member_profile.php">Profile</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link <?php echo ($current_page == 'loans.php') ? 'active' : ''; ?>"
@@ -172,7 +179,7 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
                             <?php echo htmlspecialchars($username); ?></p>
                         <p><i class="fas fa-envelope icon"></i><strong>Email:</strong> user@example.com</p>
                         <p><i class="fas fa-phone icon"></i><strong>Phone:</strong> (123) 456-7890</p>
-                        <a href="edit_profile.php" class="btn btn-primary">Edit Profile</a>
+                        <a href="member_profile.php" class="btn btn-primary">Edit Profile</a>
                     </div>
                 </div>
             </div>
@@ -183,11 +190,11 @@ $totalTransactions = array_sum(array_column($transactions, 'amount'));
                         <h4 class="mb-0">Quick Actions</h4>
                     </div>
                     <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                        <a href="apply_loan.php" class="btn btn-success mb-2 w-75">
-                            <i class="fas fa-plus-circle icon"></i> Apply for a Loan
+                        <a href="apply_loan.php" class="btn btn-primary mb-2 w-75">
+                            <i class=""></i> Apply for a Loan
                         </a>
-                        <a href="view_loans.php" class="btn btn-info w-75">
-                            <i class="fas fa-eye icon"></i> View All Loans
+                        <a href="view_loans.php" class="btn btn-primary w-75">
+                            <i class=""></i> View All Loans
                         </a>
                     </div>
                 </div>
