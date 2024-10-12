@@ -1,10 +1,10 @@
 <?php
 session_start();
-//include 'db_connection.php'; // Include database connection
+include 'connection.php'; // database connection
 
 // Maximum login attempts and lockout duration
 $max_attempts = 5;
-$lockout_time = 10 * 60;
+$lockout_time = 5 * 60; // 10 minutes
 
 // Track login attempts by username
 if (!isset($_SESSION['failed_attempts'])) {
@@ -43,14 +43,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     } else {
         // Check username and password
-        $stmt = $connection->prepare("SELECT * FROM users WHERE username = ?");
-        $stmt->bind_param('s', $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $user = $result->fetch_assoc();
+        $stmt = $con->prepare("SELECT * FROM users WHERE Username = ?");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch();
 
         // Verify password and reset attempts on success
-        if ($user && password_verify($password, $user['password'])) {
+        if ($user && password_verify($password, $user->Password)) {
             session_regenerate_id(); // Secure session ID
             $_SESSION['user'] = $username;
 
@@ -68,63 +66,102 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 }
-
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="d-flex align-items-center justify-content-center bg-light vh-100">
+    <style>
+        body {
+            background-color: #f1f4f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
 
+        .container {
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        h2 {
+            text-align: center;
+            color: #28a745;
+        }
+
+        .btn-primary {
+            background-color: #28a745;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #218838;
+        }
+
+        .btn-custom:hover {
+            color: white;
+            background-color: #218838;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
     <nav class="position-absolute top-0 end-0 p-3">
-        <a href="admin_dashboard.php" class="btn text-white fw-bold" style="background-color: #28a745;">Admin</a>
+        <a href="admin_login.php" class="btn btn-custom btn-outline-dark fw-bold">Admin</a>
     </nav>
 
     <div class="container">
-        <div class="card shadow-sm border-0 mx-auto" style="max-width: 400px;">
-            <div class="card-body p-4">
-                <h2 class="text-center fw-bold mb-4" style="color: #28a745;">Member Login</h2>
+        <h2 class="mb-4">Member Login</h2>
+        <div id="error-message" class="alert alert-danger d-none"></div>
 
-                <div id="error-message" class="alert alert-danger d-none"></div>
+        <form id="login-form">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
-                <form id="login-form">
-                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
-                        <label for="username">Username</label>
-                    </div>
-
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-                        <label for="password">Password</label>
-                    </div>
-
-                    <button type="submit" class="btn w-100 mb-3" id="login-btn" style="background-color: #28a745; color: white; font-weight: 600;">
-                        Login
-                    </button>
-
-                    <div class="text-end mb-3">
-                        <a href="#" class="text-decoration-none">Forgot Password?</a>
-                    </div>
-
-                    <hr>
-
-                    <div class="text-center">
-                        <p class="text-muted">Don't have an account yet? <a href="register.php" class="text-decoration-none">Signup</a></p>
-                    </div>
-                </form>
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                <label for="username">Username</label>
             </div>
-        </div>
+
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password"
+                    required>
+                <label for="password">Password</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mb-3">
+                Login
+            </button>
+
+            <div class="text-end mb-3">
+                <a href="#" class="text-decoration-none">Forgot Password?</a>
+            </div>
+
+            <hr>
+
+            <div class="text-center">
+                <p class="text-muted">Don't have an account yet? <a href="signup.php"
+                        class="text-decoration-none">Signup</a></p>
+            </div>
+        </form>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById("login-form").addEventListener("submit", function(event) {
+        document.getElementById("login-form").addEventListener("submit", function (event) {
             event.preventDefault();
 
             const formData = new FormData(this);
@@ -133,18 +170,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 method: "POST",
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    window.location.href = data.redirect;
-                } else {
-                    const errorMessage = document.getElementById("error-message");
-                    errorMessage.textContent = data.message;
-                    errorMessage.classList.remove("d-none");
-                }
-            })
-            .catch(error => console.error("Error:", error));
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        window.location.href = data.redirect;
+                    } else {
+                        const errorMessage = document.getElementById("error-message");
+                        errorMessage.textContent = data.message;
+                        errorMessage.classList.remove("d-none");
+                    }
+                })
+                .catch(error => console.error("Error:", error));
         });
     </script>
 </body>
+
 </html>
